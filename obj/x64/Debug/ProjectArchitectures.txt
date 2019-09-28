@@ -1,0 +1,1 @@
+C:\Users\현스기\Desktop\Snapdrone-GCS\Snapdrone-GCS.csproj;x64
