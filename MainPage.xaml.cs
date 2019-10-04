@@ -176,6 +176,7 @@ namespace Snapdrone_GCS
                 Debug.WriteLine("Register app successfully.");
                 DJISDKManager.Instance.ComponentManager.GetProductHandler(0).ProductTypeChanged += Get_Aircraft;
                 DJISDKManager.Instance.ComponentManager.GetBatteryHandler(0, 0).ChargeRemainingInPercentChanged += Get_Battery;
+                DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AltitudeChanged += Get_Altitude;
 
                 //The product connection state will be updated when it changes here.
                 DJISDKManager.Instance.ComponentManager.GetProductHandler(0).ProductTypeChanged += async delegate (object sender, ProductTypeMsg? value)
@@ -281,10 +282,35 @@ namespace Snapdrone_GCS
         }
 
         private async void StartReturnToHome()
-        {
+        {  
             SDKError err = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).StartGoHomeAsync();
             Debug.WriteLine("RTH err : " + err.ToString());
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "RTH err : " + err.ToString());
+            DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GoHomeStateChanged += Check_RTHsequence;
+        }
+
+        private void Check_RTHsequence(object sender, FCGoHomeStateMsg? RTHstate)
+        {
+            Debug.WriteLine("RTH sequence : " + RTHstate?.value.ToString());
+            if (RTHstate?.value == FCGoHomeState.COMPLETED)
+            {
+                DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AltitudeChanged += RTH_Landing;
+                DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GoHomeStateChanged -= Check_RTHsequence;
+            }
+        }
+
+        private async void RTH_Landing(object sender, DoubleMsg? alt)
+        {
+            if (alt?.value <= 0.6)
+            {
+                Thread.Sleep(1000);
+                var landingConfirmErr = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).ConfirmLandingAsync();
+                Debug.WriteLine("Landing Confirm Err : " + landingConfirmErr.ToString());
+                if(landingConfirmErr == SDKError.NO_ERROR)
+                {
+                    DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AltitudeChanged -= RTH_Landing;
+                }
+            }
         }
 
         private async void Get_Photo()
@@ -398,6 +424,18 @@ namespace Snapdrone_GCS
                 Drone_longitude.Text = longitude;
             });
             Debug.WriteLine("Drone : {Lat : " + latitude + ", Long : " + longitude + "}");
+        }
+
+        private async void Get_Altitude(object sender, DoubleMsg? altitude)
+        {
+            string altstring = altitude?.value.ToString();
+            DD.Altitude(altstring);
+            if (altstring == null) altstring = "NULL";
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                Drone_altitude.Text = altstring;
+            });
+            Debug.WriteLine("Latitude : " + altstring);
         }
 
         private void startLocationAsync(object sender, RoutedEventArgs e) => DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AircraftLocationChanged += Get_Location;
