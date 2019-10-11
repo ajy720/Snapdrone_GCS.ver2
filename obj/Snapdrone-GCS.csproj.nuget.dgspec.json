@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\현스기\\Desktop\\Snapdrone-GCS\\Snapdrone-GCS.csproj": {}
+    "C:\\Users\\현스기\\Desktop\\Snapdrone_GCS.ver2\\Snapdrone-GCS.csproj": {}
   },
   "projects": {
-    "C:\\Users\\현스기\\Desktop\\Snapdrone-GCS\\Snapdrone-GCS.csproj": {
+    "C:\\Users\\현스기\\Desktop\\Snapdrone_GCS.ver2\\Snapdrone-GCS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\현스기\\Desktop\\Snapdrone-GCS\\Snapdrone-GCS.csproj",
+        "projectUniqueName": "C:\\Users\\현스기\\Desktop\\Snapdrone_GCS.ver2\\Snapdrone-GCS.csproj",
         "projectName": "Snapdrone-GCS",
-        "projectPath": "C:\\Users\\현스기\\Desktop\\Snapdrone-GCS\\Snapdrone-GCS.csproj",
+        "projectPath": "C:\\Users\\현스기\\Desktop\\Snapdrone_GCS.ver2\\Snapdrone-GCS.csproj",
         "packagesPath": "C:\\Users\\현스기\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\현스기\\Desktop\\Snapdrone-GCS\\obj\\",
+        "outputPath": "C:\\Users\\현스기\\Desktop\\Snapdrone_GCS.ver2\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "fallbackFolders": [
@@ -22,28 +22,28 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "uap10.0.16299"
+          "uap10.0.17763"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "uap10.0.16299": {
+          "uap10.0.17763": {
             "projectReferences": {}
           }
         }
       },
       "frameworks": {
-        "uap10.0.16299": {
+        "uap10.0.17763": {
           "dependencies": {
             "Microsoft.NETCore.UniversalWindowsPlatform": {
               "target": "Package",
-              "version": "[6.2.8, )"
+              "version": "[6.2.9, )"
             },
             "Newtonsoft.Json": {
               "target": "Package",
-              "version": "[12.0.2, )"
+              "version": "[12.0.1, )"
             },
             "SocketIoClientDotNet": {
               "target": "Package",

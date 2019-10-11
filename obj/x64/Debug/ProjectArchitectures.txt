@@ -1,1 +1,1 @@
-C:\Users\현스기\Desktop\Snapdrone-GCS\Snapdrone-GCS.csproj;x64
+C:\Users\현스기\Desktop\Snapdrone_GCS.ver2\Snapdrone-GCS.csproj;x64

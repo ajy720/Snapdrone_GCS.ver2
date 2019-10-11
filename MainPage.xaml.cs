@@ -1,17 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 using Windows.UI.Core;
 
 using System.Threading.Tasks;
@@ -19,11 +8,6 @@ using System.Threading;
 
 using DJI.WindowsSDK;
 
-using Quobject.EngineIoClientDotNet.Client;
-using Quobject.EngineIoClientDotNet.Client.Transports;
-using Quobject.EngineIoClientDotNet.ComponentEmitter;
-using Quobject.EngineIoClientDotNet.Modules;
-using Quobject.EngineIoClientDotNet.Parser;
 using Quobject.SocketIoClientDotNet.Client;
 
 using Socket = Quobject.SocketIoClientDotNet.Client.Socket;
@@ -161,11 +145,6 @@ namespace Snapdrone_GCS
         {
             this.InitializeComponent();
             DJISDKManager.Instance.SDKRegistrationStateChanged += Instance_SDKRegistrationEvent;
-            //DJISDKManager.Instance.ComponentManager.GetProductHandler(0).ProductTypeChanged += Get_Aircraft;
-            //DJISDKManager.Instance.ComponentManager.GetBatteryHandler(0, 0).ChargeRemainingChanged += Get_Battery;
-            //DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AircraftLocationChanged += Get_Location;
-            //DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AltitudeChanged += Get_Location;
-            //Replace with your registered App Key. Make sure your App Key matched your application's package name on DJI developer center.
             DJISDKManager.Instance.RegisterApp("f93e5575d53bf45b03cd6d64");
         }
 
@@ -210,6 +189,7 @@ namespace Snapdrone_GCS
                 Debug.WriteLine(resultCode.ToString());
             }
         }
+
         private async void UI_output(TextBlock tb, string text)
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => tb.Text = text);
@@ -217,54 +197,52 @@ namespace Snapdrone_GCS
 
         private void Socket_init(object sender, RoutedEventArgs e)
         {
+            DroneData DD = new DroneData(80, "127", "20", "5");
             Debug.WriteLine("Socket Connecting...");
-                //socket.On(Socket.EVENT_CONNECT, async () =>{
-                string JsonString = JsonConvert.SerializeObject(DD);
-                Debug.WriteLine("Connect Success");
-                UI_output(init_status, "Connect Success");
+            Debug.WriteLine("Connect Success");
+            UI_output(init_status, "Connect Success");
 
-                socket.Emit("init_gcs", JsonString);
+            string JsonString = JsonConvert.SerializeObject(DD);
+            socket.Emit("init_gcs", JsonString);
 
-                socket.On("client_gps", async (data) =>
+            socket.On("client_gps", async (data) =>
+            {
+                Location location = JsonConvert.DeserializeObject<Location>(data.ToString());
+                UD.SetLocation(location.Latitude(), location.Longitude());
+
+                Debug.WriteLine("User Lat : " + UD.Location().Latitude());
+                Debug.WriteLine("User Long : " + UD.Location().Longitude());
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Location location = JsonConvert.DeserializeObject<Location>(data.ToString());
-                    UD.SetLocation(location.Latitude(), location.Longitude());
-                    //Debug.WriteLine(data.ToString());
-
-                    Debug.WriteLine("User Lat : " + UD.Location().Latitude());
-                    Debug.WriteLine("User Long : " + UD.Location().Longitude());
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                    {
-                        Client_latitude.Text = UD.Location().Latitude();
-                        Client_latitude.Text = UD.Location().Longitude();
-                    });
-
-                //});
-
-                socket.On("drone_call", async (client_gps) =>
-                {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => call_status.Text = "'drone_call' Request");
-                    Debug.WriteLine("Drone Call Request.");
-
-                    StartTakeOff();
-
+                    Client_latitude.Text = UD.Location().Latitude();
+                    Client_latitude.Text = UD.Location().Longitude();
                 });
 
-                socket.On("return_to_home", async () =>
-                {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "'return_to_home' Request");
-                    Debug.WriteLine("RTH Request.");
+            });
 
-                    StartReturnToHome();
-                });
+            socket.On("drone_call", async () =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => call_status.Text = "'drone_call' Request");
+                Debug.WriteLine("Drone Call Request.");
 
-                socket.On("take_picture", async () =>
-                {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => photo_status.Text = "'take_picture' Request");
-                    Debug.WriteLine("Take Picture Request.");
+                StartTakeOff();
 
-                    Get_Photo();
-                });
+            });
+
+            socket.On("return_to_home", async () =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "'return_to_home' Request");
+                Debug.WriteLine("RTH Request.");
+
+                StartReturnToHome();
+            });
+
+            socket.On("take_picture", async () =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => photo_status.Text = "'take_picture' Request");
+                Debug.WriteLine("Take Picture Request.");
+
+                Get_Photo();
             });
         }
 
@@ -290,6 +268,14 @@ namespace Snapdrone_GCS
             Debug.WriteLine("RTH err : " + err.ToString());
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "RTH err : " + err.ToString());
             DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GoHomeStateChanged += Check_RTHsequence;
+
+            var RTHstate = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GetGoHomeStateAsync();
+            Debug.WriteLine("RTH sequence : " + RTHstate.value?.value.ToString());
+            if (RTHstate.value?.value == FCGoHomeState.COMPLETED)
+            {
+                DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AltitudeChanged += RTH_Landing;
+                DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GoHomeStateChanged -= Check_RTHsequence;
+            }
         }
 
         private void Check_RTHsequence(object sender, FCGoHomeStateMsg? RTHstate)
