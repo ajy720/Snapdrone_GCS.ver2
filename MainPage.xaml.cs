@@ -210,15 +210,18 @@ namespace Snapdrone_GCS
                 Debug.WriteLine(resultCode.ToString());
             }
         }
+        private async void UI_output(TextBlock tb, string text)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => tb.Text = text);
+        }
 
         private void Socket_init(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("Socket Connecting...");
-            socket.On(Socket.EVENT_CONNECT, async () =>
-            {
+                //socket.On(Socket.EVENT_CONNECT, async () =>{
                 string JsonString = JsonConvert.SerializeObject(DD);
                 Debug.WriteLine("Connect Success");
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => init_status.Text = "Connect Success");
+                UI_output(init_status, "Connect Success");
 
                 socket.Emit("init_gcs", JsonString);
 
@@ -236,9 +239,9 @@ namespace Snapdrone_GCS
                         Client_latitude.Text = UD.Location().Longitude();
                     });
 
-                });
+                //});
 
-                socket.On("drone_call", async (data) =>
+                socket.On("drone_call", async (client_gps) =>
                 {
                     await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => call_status.Text = "'drone_call' Request");
                     Debug.WriteLine("Drone Call Request.");
