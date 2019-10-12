@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Core;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using System.Threading;
 
 using DJI.WindowsSDK;
+using DJI.WindowsSDK.Mission.Waypoint;
 
 using Quobject.SocketIoClientDotNet.Client;
 
@@ -33,21 +35,10 @@ namespace Snapdrone_GCS
 
         public String Longitude() => this._longitude;
         public void Longitude(String longitude) => this._longitude = longitude;
-        //public String Longitude
-        //{
-        //    get => _longitude;
-        //    set => _longitude = value;
-        //}
-
+        
         public String Latitude() => this._latitude;
         public void Latitude(String latitude) => this._latitude = latitude;
-        //public String Latitude
-        //{
-        //    get => _latitude;
-        //    set => _latitude = value;
-        //}
-
-        // Constructor
+       
         public Location(String latitude, String longitude)
         {
             Longitude(longitude);
@@ -79,20 +70,10 @@ namespace Snapdrone_GCS
 
         public int Battery() => this._battery;
         public void Battery(int bat) => this._battery = bat;
-        //public int Battery
-        //{
-        //    get => _battery;
-        //    set => _battery = value;
-        //}
-
+        
         public Location Location() => this._location;
         public void Location(Location location) => this._location = location;
-        //public Location Location
-        //{
-        //    get => _location;
-        //    set => _location = value;
-        //}
-
+        
         public String Altitude() => this._altitude;
         public void Altitude(String altitude) => this._altitude = altitude;
 
@@ -131,21 +112,67 @@ namespace Snapdrone_GCS
             }
         }
     }
-    /// <summary>
-    /// 자체적으로 사용하거나 프레임 내에서 탐색할 수 있는 빈 페이지입니다.
-    /// </summary>
+   
+    public class Joystick
+    {
+        [JsonProperty("throttle")]
+        private float _throttle;
+        [JsonProperty("roll")]
+        private float _roll;
+        [JsonProperty("pitch")]
+        private float _pitch;
+        [JsonProperty("yaw")]
+        private float _yaw;
+
+        public Joystick()
+        {
+            //Default Constructor
+        }
+
+        public Joystick(float t, float r, float p, float y)
+        {
+            _throttle = t;
+            _roll = r;
+            _pitch = p;
+            _yaw = y;
+        }
+
+        public float Throt() => this._throttle;
+        public float Roll() => this._roll;
+        public float Pitch() => this._pitch;
+        public float Yaw() => this._yaw;
+    }
+
+    public class UserId
+    {
+        [JsonProperty("ID")]
+        private string _id;
+
+        public UserId()
+        {
+            //Default Constructor
+        }
+
+        public string ID() => this._id;
+        public void ID(string id) => this._id = id;
+    }
+
     public sealed partial class MainPage : Page
     {
-
-        Socket socket = IO.Socket("https://api.teamhapco.com/");
         DroneData DD = new DroneData(80, "127", "20", "5");
         UserData UD = new UserData();
+        Joystick JS = new Joystick();
+        UserId UI = new UserId();
+        Socket socket;
+        WaypointMission WaypointMission;
 
         public MainPage()
         {
             this.InitializeComponent();
             DJISDKManager.Instance.SDKRegistrationStateChanged += Instance_SDKRegistrationEvent;
             DJISDKManager.Instance.RegisterApp("f93e5575d53bf45b03cd6d64");
+            socket = IO.Socket("https://api.teamhapco.com/");
+            socket.Connect();
         }
 
         private async void Instance_SDKRegistrationEvent(SDKRegistrationState state, SDKError resultCode)
@@ -197,61 +224,89 @@ namespace Snapdrone_GCS
 
         private void Socket_init(object sender, RoutedEventArgs e)
         {
-            DroneData DD = new DroneData(80, "127", "20", "5");
             Debug.WriteLine("Socket Connecting...");
-            Debug.WriteLine("Connect Success");
             UI_output(init_status, "Connect Success");
 
             string JsonString = JsonConvert.SerializeObject(DD);
             socket.Emit("init_gcs", JsonString);
-
-            socket.On("client_gps", async (data) =>
+            socket.On("client_gps", (data) =>
             {
                 Location location = JsonConvert.DeserializeObject<Location>(data.ToString());
                 UD.SetLocation(location.Latitude(), location.Longitude());
 
                 Debug.WriteLine("User Lat : " + UD.Location().Latitude());
                 Debug.WriteLine("User Long : " + UD.Location().Longitude());
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                {
-                    Client_latitude.Text = UD.Location().Latitude();
-                    Client_latitude.Text = UD.Location().Longitude();
-                });
+                UI_output(Client_latitude, UD.Location().Latitude());
+                UI_output(Client_longitude, UD.Location().Longitude());
 
             });
 
-            socket.On("drone_call", async () =>
+            socket.On("drone_call", () =>
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => call_status.Text = "'drone_call' Request");
+                UI_output(call_status, "'drone_call' Request");
                 Debug.WriteLine("Drone Call Request.");
 
                 StartTakeOff();
-
             });
 
-            socket.On("return_to_home", async () =>
+            socket.On("return_to_home", () =>
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "'return_to_home' Request");
+                UI_output(rth_status, "'return_to_home' Request");
                 Debug.WriteLine("RTH Request.");
 
                 StartReturnToHome();
             });
 
-            socket.On("take_picture", async () =>
+            socket.On("take_picture", () =>
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => photo_status.Text = "'take_picture' Request");
+                UI_output(photo_status, "'take_picture' Request");
                 Debug.WriteLine("Take Picture Request.");
 
                 Get_Photo();
             });
+
+            socket.On("drone_control", (data) =>
+            {
+                Debug.WriteLine("Drone_Control Request.");
+
+                Set_Joystick(data.ToString());
+            });
+
+            socket.On(Socket.EVENT_DISCONNECT, () =>
+            {
+                Debug.WriteLine("Socket Disconnect.");
+                JsonString = JsonConvert.SerializeObject(DD);
+                socket.Emit("init_gcs", JsonString);
+            });
+
+            socket.On("init_gcs_success", (data) =>
+            {
+                Debug.WriteLine("init GCS Success");
+                UI = JsonConvert.DeserializeObject<UserId>(data.ToString());
+                Debug.WriteLine("ID : " + UI.ID());
+            });
+
+            socket.On("init_client_success", (data) =>
+            {
+                Debug.WriteLine("Init Client Success");
+                UI = JsonConvert.DeserializeObject<UserId>(data.ToString());
+                Debug.WriteLine("ID : " + UI.ID());
+            });
+        }
+
+        private void Set_Joystick(string data)
+        { 
+            JS = JsonConvert.DeserializeObject<Joystick>(data);
+            Debug.WriteLine("Throttle : " + JS.Throt() + ", Roll : " + JS.Roll() + ", Pitch : " + JS.Pitch() + ", Yaw : " + JS.Yaw());
+            DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(JS.Throt(), JS.Roll(), JS.Pitch(), JS.Yaw());
         }
 
         private async void StartTakeOff()
         {
             SDKError err = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).StartTakeoffAsync();
             Debug.WriteLine("Takeoff err : " + err.ToString());
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => call_status.Text = "Takeoff err : " + err.ToString());
-
+            UI_output(call_status, "Takeoff err : " + err.ToString());
+            /*
             if (err == SDKError.NO_ERROR || err == SDKError.REQUEST_TIMEOUT)
             {
                 DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(1, 0, 0, 0);
@@ -259,14 +314,14 @@ namespace Snapdrone_GCS
                 DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(0, 0, 1, 0);
                 Thread.Sleep(2500);
                 DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(0, 0, 0, 0);
-            }
+            }*/
         }
 
         private async void StartReturnToHome()
         {  
             SDKError err = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).StartGoHomeAsync();
             Debug.WriteLine("RTH err : " + err.ToString());
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => rth_status.Text = "RTH err : " + err.ToString());
+            UI_output(rth_status, "RTH err : " + err.ToString());
             DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GoHomeStateChanged += Check_RTHsequence;
 
             var RTHstate = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GetGoHomeStateAsync();
@@ -320,115 +375,239 @@ namespace Snapdrone_GCS
 
             var error = (await DJISDKManager.Instance.ComponentManager.GetCameraHandler(0, 0).StartShootPhotoAsync());
             Debug.WriteLine("Take Picture err : " + error.ToString());
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => photo_status.Text = "Take Picture err : " + error.ToString());
+            UI_output(photo_status, "Take Picture err : " + error.ToString());
         }
 
         private async void Get_Aircraft(object sender, RoutedEventArgs e)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-            {
-                var model = (await DJISDKManager.Instance.ComponentManager.GetProductHandler(0).GetProductTypeAsync());
+            var model = (await DJISDKManager.Instance.ComponentManager.GetProductHandler(0).GetProductTypeAsync());
 
-                if (model.value == null)
-                {
-                    aircraft.Text = model.error.ToString();
-                    Debug.WriteLine("Get Aircraft err : " + model.error.ToString());
-                }
-                else
-                {
-                    string modelstring = model.value?.value.ToString();
-                    aircraft.Text = modelstring;
-                    Debug.WriteLine("Aircraft : " + modelstring);
-                }
-            });
+            if (model.value == null)
+            {
+                UI_output(aircraft, model.error.ToString());
+                Debug.WriteLine("Get Aircraft err : " + model.error.ToString());
+            }
+            else
+            {
+                string modelstring = model.value?.value.ToString();
+                UI_output(aircraft, modelstring);
+                Debug.WriteLine("Aircraft : " + modelstring);
+            }
         }
 
-        private async void Get_Aircraft(object sender, ProductTypeMsg? model)
+        private void Get_Aircraft(object sender, ProductTypeMsg? model)
         {
             string modelstring = model?.value.ToString();
             if (modelstring == null) modelstring = "NULL";
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => aircraft.Text = modelstring);
+            UI_output(aircraft, modelstring);
             Debug.WriteLine("Aircraft : " + modelstring);
         }
 
         private async void Get_Battery(object sender, RoutedEventArgs e)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-            {
-                var bat = await DJISDKManager.Instance.ComponentManager.GetBatteryHandler(0, 0).GetChargeRemainingInPercentAsync();
+            var bat = await DJISDKManager.Instance.ComponentManager.GetBatteryHandler(0, 0).GetChargeRemainingInPercentAsync();
 
-                if (bat.value == null)
-                {
-                    battery.Text = bat.error.ToString();
-                    Debug.WriteLine("Get Battery err : " + bat.error.ToString());
-                }
-                else
-                {
-                    string batstring = bat.value?.value.ToString();
-                    battery.Text = batstring;
-                    Debug.WriteLine("Battery : " + batstring);
-                }
-            });
+            if (bat.value == null)
+            {
+                UI_output(battery, bat.error.ToString());
+                Debug.WriteLine("Get Battery err : " + bat.error.ToString());
+            }
+            else
+            {
+                string batstring = bat.value?.value.ToString();
+                UI_output(battery, batstring);
+                Debug.WriteLine("Battery : " + batstring);
+            }
         }
 
-        private async void Get_Battery(object sender, IntMsg? bat)
+        private void Get_Battery(object sender, IntMsg? bat)
         {
             string batstring = bat?.value.ToString();
             if (batstring == null) batstring = "NULL";
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => battery.Text = batstring);
+            UI_output(battery, batstring);
             Debug.WriteLine("Battery : " + batstring);
         }
 
         private async void Get_Location(object sender, RoutedEventArgs e)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-            {
-                var location = (await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GetAircraftLocationAsync());
+            var location = (await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).GetAircraftLocationAsync());
 
-                if (location.value == null)
-                {
-                    aircraft.Text = location.error.ToString();
-                    Debug.WriteLine("Get Loaction err : " + location.error.ToString());
-                }
-                else
-                {
-                    string latitude = location.value?.latitude.ToString();
-                    string longitude = location.value?.longitude.ToString();
-                    Drone_latitude.Text = latitude;
-                    Drone_longitude.Text = longitude;
-                    Debug.WriteLine("Drone : {Lat : " + latitude + ", Long : " + longitude + "}");
-                }
-            });
+            if (location.value == null)
+            {
+                UI_output(aircraft, location.error.ToString());
+                Debug.WriteLine("Get Loaction err : " + location.error.ToString());
+            }
+            else
+            {
+                string latitude = location.value?.latitude.ToString();
+                string longitude = location.value?.longitude.ToString();
+                UI_output(Drone_latitude, latitude);
+                UI_output(Drone_longitude, longitude);
+                Debug.WriteLine("Drone : {Lat : " + latitude + ", Long : " + longitude + "}");
+            }
         }
 
-        private async void Get_Location(object sender, LocationCoordinate2D? location)
+        private void Get_Location(object sender, LocationCoordinate2D? location)
         {
             string latitude = location?.latitude.ToString();
             string longitude = location?.longitude.ToString();
             if (latitude == null) latitude = "NULL";
             if (longitude == null) longitude = "NULL";
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                Drone_latitude.Text = latitude;
-                Drone_longitude.Text = longitude;
-            });
+            UI_output(Drone_latitude, latitude);
+            UI_output(Drone_longitude, longitude);
             Debug.WriteLine("Drone : {Lat : " + latitude + ", Long : " + longitude + "}");
         }
 
-        private async void Get_Altitude(object sender, DoubleMsg? altitude)
+        private void Get_Altitude(object sender, DoubleMsg? altitude)
         {
             string altstring = altitude?.value.ToString();
             DD.Altitude(altstring);
             if (altstring == null) altstring = "NULL";
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                Drone_altitude.Text = altstring;
-            });
+            UI_output(Drone_altitude, altstring);
             Debug.WriteLine("Latitude : " + altstring);
         }
 
         private void startLocationAsync(object sender, RoutedEventArgs e) => DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AircraftLocationChanged += Get_Location;
 
         private void stopLocationAsync(object sender, RoutedEventArgs e) => DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).AircraftLocationChanged -= Get_Location;
+
+        private void Throttle_Up(object sender, RoutedEventArgs e)
+        {
+            DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(1, 0, 0, 0);
+        }
+
+        private void Throttle_Down(object sender, RoutedEventArgs e)
+        {
+            DJISDKManager.Instance.VirtualRemoteController.UpdateJoystickValue(-1, 0, 0, 0);
+        }
+
+        private async void Set_GroundStationMode(object sender, RoutedEventArgs e)
+        {
+            BoolMsg yn = new BoolMsg();
+            yn.value = true;
+            var err = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).SetGroundStationModeEnabledAsync(yn);
+            Debug.WriteLine(err.ToString());
+            DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).StateChanged += Waypoint_Mission_State;
+        }
+
+        private void Init_Mission(object sender, RoutedEventArgs e)
+        {
+            double nowLat = Convert.ToDouble(DD.Location().Latitude());
+            double nowLng = Convert.ToDouble(DD.Location().Longitude());
+
+            WaypointMission = new WaypointMission()
+            {
+                waypointCount = 4,
+                maxFlightSpeed = 15,
+                autoFlightSpeed = 10,
+                finishedAction = WaypointMissionFinishedAction.NO_ACTION,
+                headingMode = WaypointMissionHeadingMode.AUTO,
+                flightPathMode = WaypointMissionFlightPathMode.NORMAL,
+                gotoFirstWaypointMode = WaypointMissionGotoFirstWaypointMode.SAFELY,
+                exitMissionOnRCSignalLostEnabled = false,
+                pointOfInterest = new LocationCoordinate2D()
+                {
+                    latitude = 0,
+                    longitude = 0
+                },
+                gimbalPitchRotationEnabled = true,
+                repeatTimes = 0,
+                missionID = 0,
+                waypoints = new List<Waypoint>()
+                            {
+                                InitDumpWaypoint(nowLat+0.001, nowLng+0.0015),
+                                InitDumpWaypoint(nowLat+0.001, nowLng-0.0015),
+                                InitDumpWaypoint(nowLat-0.001, nowLng-0.0015),
+                                InitDumpWaypoint(nowLat-0.001, nowLng+0.0015),
+                            }
+            };
+        }
+
+        private void Load_Mission(object sender, RoutedEventArgs e)
+        {
+            var state = DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).GetCurrentState();
+            Debug.WriteLine(state.ToString());
+            //WaypointMissionState.Text = state.ToString();
+            SDKError err = DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).LoadMission(WaypointMission);
+
+            Debug.WriteLine("SDK load mission : " + err.ToString());
+            //LoadMissionError.Text = "SDK load mission : " + err.ToString();
+        }
+
+        private void Get_Loaded_Mission(object sender, RoutedEventArgs e)
+        {
+            var WaypointMission = DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).GetLoadedMission();
+
+            //if (err != null); //WaypointMission = DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).GetLoadedMission().Value;
+            //else System.Diagnostics.Debug.WriteLine("get load null");
+        }
+
+        private async void Upload_Mission(object sender, RoutedEventArgs e)
+        {
+            //DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).GetLoadedMission();
+            SDKError err = await DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).UploadMission();
+            Debug.WriteLine("Upload mission to aircraft : " + err.ToString());
+            DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).UploadStateChanged += Upload_State;
+            //UploadMissionError.Text = "Upload mission to aircraft : " + err.ToString();
+        }
+
+        private void Upload_State(object sender, WaypointMissionUploadState? state)
+        {
+            Debug.WriteLine("Upload State : " + JsonConvert.SerializeObject(state.Value));
+        }
+
+        private async void Retry_Upload_Mission(object sender, RoutedEventArgs e)
+        {
+            var err = await DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).RetryUploadMission();
+            Debug.WriteLine("RetryUpload err : " + err.ToString());
+        }
+
+            private void Waypoint_Mission_State(object sender, WaypointMissionStateTransition? state)
+        {
+            Debug.WriteLine("Current State : " + state.Value.current.ToString());
+            Debug.WriteLine("Previous State : " + state.Value.previous.ToString());
+        }
+
+        private async void Start_Mission(object sender, RoutedEventArgs e)
+        {
+            var err = await DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).StartMission();
+            Debug.WriteLine("Start mission : " + err.ToString());
+            //ExecuteMissionError.Text = "Start mission : " + err.ToString();
+        }
+
+        private Waypoint InitDumpWaypoint(double latitude, double longitude)
+        {
+            Waypoint waypoint = new Waypoint()
+            {
+                location = new LocationCoordinate2D() { latitude = latitude, longitude = longitude },
+                altitude = 20,
+                turnMode = WaypointTurnMode.CLOCKWISE,
+                heading = 0,
+                gimbalPitch = -30,
+                actionRepeatTimes = 1,
+                actionTimeoutInSeconds = 60,
+                cornerRadiusInMeters = 0.2,
+                speed = 0,
+                shootPhotoTimeInterval = -1,
+                shootPhotoDistanceInterval = -1,
+                waypointActions = new List<WaypointAction>()
+                {
+                    InitDumpWaypointAction(1000, WaypointActionType.STAY),
+                }
+            };
+            return waypoint;
+        }
+
+        private WaypointAction InitDumpWaypointAction(int Param, WaypointActionType actiontype)
+        {
+            WaypointAction action = new WaypointAction()
+            {
+                actionType = actiontype,
+                actionParam = Param
+            };
+            return action;
+        }
+
+
     }
 }

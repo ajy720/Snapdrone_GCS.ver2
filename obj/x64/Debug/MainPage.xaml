@@ -35,13 +35,22 @@
         <TextBlock x:ConnectionId='15' Name="rth_status" Text="RTH Status" Margin="163, 256, 0, 0"></TextBlock>
         <TextBlock x:ConnectionId='16' Name="photo_status" Text="photo Status" Margin="163, 286, 0, 0"></TextBlock>
 
-        <TextBlock Text="Client Location" Margin="400,60,-402,-16" FontSize="20px" FontWeight="Medium"/>
-        <TextBlock Text="Latitude : " Margin="400,96,-402,-16"/>
+        <TextBlock Text="Client Location" Margin="529,60,-531,-16" FontSize="20px" FontWeight="Medium"/>
+        <TextBlock Text="Latitude : " Margin="529,96,-531,-16"/>
         <TextBlock x:ConnectionId='17' Margin="480,126,-402,-16" Name="Client_latitude"/>
-        <TextBlock Text="Longitude : " Margin="400,126,-402,-16"/>
+        <TextBlock Text="Longitude : " Margin="529,126,-531,-16"/>
         <TextBlock x:ConnectionId='18' Margin="480,126,-402,-16" Name="Client_longitude"/>
 
+        <Button x:ConnectionId='19' Name="ThUp"                     Content="Up" Margin="20,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
+        <Button x:ConnectionId='20' Name="ThDn"                       Content="Down" Margin="80,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
 
+        <Button x:ConnectionId='21' Name="SetGroundStationMode"                               Content="Mission" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='22' Name="InitMission"                      Content="Init" Margin="85,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='23' Name="LoadMission"                      Content="Load" Margin="160,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='24' Name="GetLoadMission"                            Content="GetLoad" Margin="235,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='25' Name="UploadMission"                        Content="Upload" Margin="310,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='26' Name="RetryUploadMission"                              Content="RtUp" Margin="310,298,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='27' Name="StartMission"                       Content="Start" Margin="385,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
 
     </Grid>
 </Page>

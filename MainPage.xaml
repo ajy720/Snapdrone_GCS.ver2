@@ -35,13 +35,22 @@
         <TextBlock Name="rth_status" Text="RTH Status" Margin="163, 256, 0, 0"></TextBlock>
         <TextBlock Name="photo_status" Text="photo Status" Margin="163, 286, 0, 0"></TextBlock>
 
-        <TextBlock Text="Client Location" Margin="400,60,-402,-16" FontSize="20px" FontWeight="Medium"/>
-        <TextBlock Text="Latitude : " Margin="400,96,-402,-16"/>
+        <TextBlock Text="Client Location" Margin="529,60,-531,-16" FontSize="20px" FontWeight="Medium"/>
+        <TextBlock Text="Latitude : " Margin="529,96,-531,-16"/>
         <TextBlock Margin="480,126,-402,-16" Name="Client_latitude"/>
-        <TextBlock Text="Longitude : " Margin="400,126,-402,-16"/>
+        <TextBlock Text="Longitude : " Margin="529,126,-531,-16"/>
         <TextBlock Margin="480,126,-402,-16" Name="Client_longitude"/>
 
+        <Button Name="ThUp" Click="Throttle_Up" Content="Up" Margin="20,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
+        <Button Name="ThDn" Click="Throttle_Down" Content="Down" Margin="80,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
 
+        <Button Name="SetGroundStationMode" Click="Set_GroundStationMode" Content="Mission" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="InitMission" Click="Init_Mission" Content="Init" Margin="85,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="LoadMission" Click="Load_Mission" Content="Load" Margin="160,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="GetLoadMission" Click="Get_Loaded_Mission" Content="GetLoad" Margin="235,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="UploadMission" Click="Upload_Mission" Content="Upload" Margin="310,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="RetryUploadMission" Click="Retry_Upload_Mission" Content="RtUp" Margin="310,298,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="StartMission" Click="Start_Mission" Content="Start" Margin="385,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
 
     </Grid>
 </Page>
