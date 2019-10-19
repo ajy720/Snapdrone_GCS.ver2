@@ -172,7 +172,6 @@ namespace Snapdrone_GCS
             DJISDKManager.Instance.SDKRegistrationStateChanged += Instance_SDKRegistrationEvent;
             DJISDKManager.Instance.RegisterApp("f93e5575d53bf45b03cd6d64");
             socket = IO.Socket("https://api.teamhapco.com/");
-            socket.Connect();
         }
 
         private async void Instance_SDKRegistrationEvent(SDKRegistrationState state, SDKError resultCode)
