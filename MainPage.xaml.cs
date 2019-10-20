@@ -224,7 +224,7 @@ namespace Snapdrone_GCS
         private void Socket_init(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("Socket Connecting...");
-            UI_output(init_status, "Connect Success");
+            UI_output(init_status, "Socket Connecting...");
 
             string JsonString = JsonConvert.SerializeObject(DD);
             socket.Emit("init_gcs", JsonString);
@@ -433,7 +433,8 @@ namespace Snapdrone_GCS
 
             if (location.value == null)
             {
-                UI_output(aircraft, location.error.ToString());
+                UI_output(Drone_latitude, location.error.ToString());
+                UI_output(Drone_longitude, location.error.ToString());
                 Debug.WriteLine("Get Loaction err : " + location.error.ToString());
             }
             else
@@ -485,7 +486,7 @@ namespace Snapdrone_GCS
             BoolMsg yn = new BoolMsg();
             yn.value = true;
             var err = await DJISDKManager.Instance.ComponentManager.GetFlightControllerHandler(0, 0).SetGroundStationModeEnabledAsync(yn);
-            Debug.WriteLine(err.ToString());
+            Debug.WriteLine("GSM err : " + err.ToString());
             DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).StateChanged += Waypoint_Mission_State;
         }
 
@@ -496,7 +497,7 @@ namespace Snapdrone_GCS
 
             WaypointMission = new WaypointMission()
             {
-                waypointCount = 4,
+                waypointCount = 3,
                 maxFlightSpeed = 15,
                 autoFlightSpeed = 10,
                 finishedAction = WaypointMissionFinishedAction.NO_ACTION,
@@ -515,9 +516,9 @@ namespace Snapdrone_GCS
                 waypoints = new List<Waypoint>()
                             {
                                 InitDumpWaypoint(nowLat+0.001, nowLng+0.0015),
-                                InitDumpWaypoint(nowLat+0.001, nowLng-0.0015),
+                                InitDumpWaypoint(nowLat+0.001, nowLng-0.0015)/*,
                                 InitDumpWaypoint(nowLat-0.001, nowLng-0.0015),
-                                InitDumpWaypoint(nowLat-0.001, nowLng+0.0015),
+                                InitDumpWaypoint(nowLat-0.001, nowLng+0.0015)*/
                             }
             };
         }
@@ -561,7 +562,7 @@ namespace Snapdrone_GCS
             Debug.WriteLine("RetryUpload err : " + err.ToString());
         }
 
-            private void Waypoint_Mission_State(object sender, WaypointMissionStateTransition? state)
+        private void Waypoint_Mission_State(object sender, WaypointMissionStateTransition? state)
         {
             Debug.WriteLine("Current State : " + state.Value.current.ToString());
             Debug.WriteLine("Previous State : " + state.Value.previous.ToString());
@@ -571,6 +572,7 @@ namespace Snapdrone_GCS
         {
             var err = await DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).StartMission();
             Debug.WriteLine("Start mission : " + err.ToString());
+            if(err == SDKError.INVALID_REQUEST_IN_CURRENT_STATE) Debug.WriteLine("Current State : " + DJISDKManager.Instance.WaypointMissionManager.GetWaypointMissionHandler(0).GetCurrentState().ToString());
             //ExecuteMissionError.Text = "Start mission : " + err.ToString();
         }
 
@@ -591,7 +593,7 @@ namespace Snapdrone_GCS
                 shootPhotoDistanceInterval = -1,
                 waypointActions = new List<WaypointAction>()
                 {
-                    InitDumpWaypointAction(1000, WaypointActionType.STAY),
+                    InitDumpWaypointAction(1000, WaypointActionType.STAY)
                 }
             };
             return waypoint;

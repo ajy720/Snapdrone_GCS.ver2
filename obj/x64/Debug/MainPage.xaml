@@ -44,7 +44,7 @@
         <Button x:ConnectionId='19' Name="ThUp"                     Content="Up" Margin="20,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
         <Button x:ConnectionId='20' Name="ThDn"                       Content="Down" Margin="80,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
 
-        <Button x:ConnectionId='21' Name="SetGroundStationMode"                               Content="Mission" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button x:ConnectionId='21' Name="SetGroundStationMode"                               Content="GSMset" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button x:ConnectionId='22' Name="InitMission"                      Content="Init" Margin="85,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button x:ConnectionId='23' Name="LoadMission"                      Content="Load" Margin="160,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button x:ConnectionId='24' Name="GetLoadMission"                            Content="GetLoad" Margin="235,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>

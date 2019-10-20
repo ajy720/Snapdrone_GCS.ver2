@@ -44,7 +44,7 @@
         <Button Name="ThUp" Click="Throttle_Up" Content="Up" Margin="20,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
         <Button Name="ThDn" Click="Throttle_Down" Content="Down" Margin="80,260,0,0" Width="50" HorizontalContentAlignment="Center" VerticalAlignment="Top"></Button>
 
-        <Button Name="SetGroundStationMode" Click="Set_GroundStationMode" Content="Mission" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
+        <Button Name="SetGroundStationMode" Click="Set_GroundStationMode" Content="GSMset" Margin="10,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button Name="InitMission" Click="Init_Mission" Content="Init" Margin="85,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button Name="LoadMission" Click="Load_Mission" Content="Load" Margin="160,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
         <Button Name="GetLoadMission" Click="Get_Loaded_Mission" Content="GetLoad" Margin="235,330,0,0" Width="75" HorizontalContentAlignment="Center" VerticalAlignment="Top"/>
